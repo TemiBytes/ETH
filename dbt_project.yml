@@ -33,3 +33,5 @@ models:
   eth:
     stg:
       +materialized: view
+    int:
+      +materialized: table
