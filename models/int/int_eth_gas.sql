@@ -11,7 +11,7 @@ gas_enriched as (
         block_number,
         block_timestamp,
         tx_date,
-        from_address
+        from_address,
 
         -- raw gas fields for reference
         gas as gas_limit,
@@ -22,7 +22,7 @@ gas_enriched as (
         max_priority_fee_per_gas,
 
         -- derived: actual cost of this transaction in ETH, calculated as gas used * effective gas price, converted from wei to eth
-        div0(receipt_gas_used * receipt_effective_gas_price, 1e18) as gas_cost_eth
+        div0(receipt_gas_used * receipt_effective_gas_price, 1e18) as gas_cost_eth,
 
 
         -- Derived: how much of the gas limit was actually consumed
