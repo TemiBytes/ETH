@@ -34,10 +34,10 @@ flattened as (
         payload:nonce::integer as nonce,
         payload:value::number(38, 0) as value_wei,
         payload:input::string as input,
-        payload:receipt_status as receipt_status,
+        payload:receipt_status::integer as receipt_status,
         
         -- Metadata
         payload:last_modified::timestamp as last_modified
     from source
 )
-select * from flattened
+select * from flattened qualify row_number() over (partition by hashkey order by last_modified desc) = 1
