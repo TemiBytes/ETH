@@ -5,3 +5,37 @@ models:
         tests:
           - not_null
           - unique
+
+  - name: int_eth_gas
+    description: >
+    Enriched gas metrics derived from the staging table.
+    It computes actual gas cost in USD, gas utilization against the senders limit,
+    and flags EIP-1559 transactions.
+    columns:
+  - name: hashkey
+    description: "Unique transaction identifier, passed through from staging"
+    tests:
+      - unique
+      - not_null
+
+  - name: gas_cost_eth
+    description: "Actual gas fee paid in ETH (receipt_gas_used * receipt_effective_gas_price / 1e18)"
+    tests:
+      - not_null
+
+  - name: gas_cost_usd
+    description: "Gas fee converted to USD using the convert_to_usd macro"
+    tests:
+      - not_null
+
+  - name: gas_utilization_pct
+    description: "Percentage of gas limit actually consumed (0–100+)"
+    tests:
+      - not_null
+
+  - name: is_eip1559
+    description: "True if the transaction used the EIP-1559 fee model"
+    tests:
+      - not_null
+      - accepted_values:
+          values: [true, false]
