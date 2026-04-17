@@ -39,3 +39,46 @@ models:
           - not_null
           - accepted_values:
               values: [true, false]
+  
+  - name: int_eth_transfers
+    description: >
+      Enriched transfer metrics derived from stg_eth_transactions.
+      Converts value from Wei to ETH and USD, classifies each transaction
+      by transfer type, and adds readable boolean flags for status and value.
+    columns:
+      - name: hashkey
+        description: "Unique transaction identifier, passed through from staging"
+        tests:
+          - unique
+          - not_null
+
+      - name: value_eth
+        description: "Transaction value converted from Wei to ETH (value_wei / 1e18)"
+        tests:
+          - not_null
+
+      - name: value_usd
+        description: "Transaction value in USD using the convert_to_usd macro"
+        tests:
+          - not_null
+
+      - name: transfer_type
+        description: "Classification of the transaction: eth_transfer, contract_creation, or contract_interaction"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['eth_transfer', 'contract_creation', 'contract_interaction']
+
+      - name: is_successful
+        description: "True if receipt_status = 1, false if receipt_status = 0"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: has_value
+        description: "True if value_wei > 0, false for zero-value transactions"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]      
