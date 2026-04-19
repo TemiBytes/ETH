@@ -1,11 +1,4 @@
 models:
-  - name: stg_eth
-    columns:
-      - name: hashkey
-        tests:
-          - not_null
-          - unique
-
   - name: int_eth_gas
     description: >
       Enriched gas metrics derived from the staging table.
@@ -39,7 +32,7 @@ models:
           - not_null
           - accepted_values:
               values: [true, false]
-  
+
   - name: int_eth_transfers
     description: >
       Enriched transfer metrics derived from stg_eth_transactions.
@@ -81,7 +74,7 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [true, false]     
+              values: [true, false]
 
   - name: int_eth_contract_activity
     description: >
@@ -123,100 +116,5 @@ models:
 
       - name: input_data_length
         description: "Character length of the input field, used as a proxy for contract call complexity"
-        tests:
-          - not_null 
-
-  - name: whale_alert
-    description: >
-      Identifies large ETH wallet-to-wallet transfers above the whale
-      threshold. Classifies each transaction into a whale tier, ranks
-      transactions by USD value within each day, and flags self-transfers.
-      Only includes successful eth_transfer transactions.
-    columns:
-      - name: hashkey
-        description: "Unique transaction identifier"
-        tests:
-          - unique
-          - not_null
-
-      - name: value_usd
-        description: "Transaction value in USD, used for tier classification and ranking"
-        tests:
-          - not_null
-
-      - name: whale_tier
-        description: "Classification of the transaction: whale, large_whale, or mega_whale"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['whale', 'large_whale', 'mega_whale']
-
-      - name: usd_rank
-        description: "Rank of this transaction by USD value within its day (1 = largest)"
-        tests:
-          - not_null
-
-      - name: is_self_transfer
-        description: "True if from_address equals to_address"
-        tests:
-          - not_null
-          - accepted_values:
-              values: [true, false]
-
-      - name: value_eth_rounded
-        description: "Transaction value in ETH rounded to 6 decimal places"
-        tests:
-          - not_null
-  - name: gas_price_trends
-    description: >
-      Daily gas fee summary aggregated from int_eth_gas. Grain is one row
-      per day per fee model (EIP-1559 vs legacy). Tracks average, median,
-      and max gas costs, total ETH spent on fees, gas utilization, and
-      EIP-1559 adoption over time.
-      tests:
-        - dbt_utils.unique_combination_of_columns:
-            combination_of_columns:
-              - tx_date
-              - is_eip1559 -s
-    columns:
-      - name: tx_date
-        description: "The date of the transactions being summarised"
-        tests:
-          - not_null
-
-      - name: is_eip1559
-        description: "True for EIP-1559 transactions, false for legacy fee model transactions"
-        tests:
-          - not_null
-          - accepted_values:
-              values: [true, false]
-
-      - name: tx_count
-        description: "Number of transactions in this day and fee model group"
-        tests:
-          - not_null
-
-      - name: avg_gas_price_gwei
-        description: "Average gas price in Gwei (gas_price / 1e9)"
-        tests:
-          - not_null
-
-      - name: avg_gas_cost_usd
-        description: "Average gas fee paid per transaction in USD"
-        tests:
-          - not_null
-
-      - name: median_gas_cost_usd
-        description: "Median gas fee paid per transaction in USD"
-        tests:
-          - not_null
-
-      - name: total_gas_spent_eth
-        description: "Total ETH consumed in gas fees across all transactions that day"
-        tests:
-          - not_null
-
-      - name: eip1559_adoption_pct
-        description: "Percentage of transactions using the EIP-1559 fee model that day"
         tests:
           - not_null
