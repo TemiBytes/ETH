@@ -22,6 +22,15 @@ clean-targets:         # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
 
+vars:
+  # Define any project-level variables here. These can be overridden in the
+  # dbt_project.yml file of a package, or in the dbt_project.yml file of a
+  # specific model.
+  # For example, you could define a variable for the default schema name:
+  # default_schema: 'my_schema'
+  whale_threshold_usd: 1000 # minimum USD value to qualify as a whale transaction
+  mega_whale_threshold_usd: 1000000
+  large_whale_threshold_usd: 100000
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
