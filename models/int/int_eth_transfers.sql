@@ -13,6 +13,7 @@ transfers_enriched as (
         from_address,
         to_address,
         receipt_contract_address,
+        input,
         -- raw value (kept for reference)
         value_wei,
         -- derived: value converted from wei to eth
