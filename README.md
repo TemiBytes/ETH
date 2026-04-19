@@ -163,7 +163,3 @@ dbt snapshot
 **TemiBytes** — [GitHub](https://github.com/TemiBytes)
 
 ---
-
-## 📄 License
-
-_(Add your license here)_
