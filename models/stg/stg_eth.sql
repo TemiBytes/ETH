@@ -17,9 +17,9 @@ flattened as (
         payload:transaction_type::integer as transaction_type,
         
         -- Addresses
-        payload:from_address::string as from_address,
-        payload:to_address::string as to_address,
-        payload:receipt_contract_address::string as receipt_contract_address,
+        nullif(payload:from_address::string, '') as from_address,
+        nullif(payload:to_address::string, '') as to_address,
+        nullif(payload:receipt_contract_address::string, '') as receipt_contract_address,
         
         -- Gas-related fields
         payload:gas::integer as gas,

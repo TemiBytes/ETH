@@ -81,4 +81,47 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [true, false]      
+              values: [true, false]     
+
+  - name: int_eth_contract_activity
+    description: >
+      Filters int_eth_transfers to only contract-related transactions
+      (contract_creation and contract_interaction). Adds a unified
+      contract_address column and input data length as a complexity proxy.
+    columns:
+      - name: hashkey
+        description: "Unique transaction identifier, passed through from staging"
+        tests:
+          - unique
+          - not_null
+
+      - name: contract_address
+        description: >
+          Unified contract address. Resolves to receipt_contract_address
+          for contract creations, to_address for contract interactions.
+        tests:
+          - not_null
+
+      - name: transfer_type
+        description: "Either contract_creation or contract_interaction — eth_transfer rows are excluded"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['contract_creation', 'contract_interaction']
+
+      - name: is_contract_creation
+        description: "True if this transaction deployed a new smart contract"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: is_successful
+        description: "True if receipt_status = 1, passed through from int_eth_transfers"
+        tests:
+          - not_null
+
+      - name: input_data_length
+        description: "Character length of the input field, used as a proxy for contract call complexity"
+        tests:
+          - not_null 
