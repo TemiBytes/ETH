@@ -125,3 +125,45 @@ models:
         description: "Character length of the input field, used as a proxy for contract call complexity"
         tests:
           - not_null 
+
+  - name: whale_alert
+    description: >
+      Identifies large ETH wallet-to-wallet transfers above the whale
+      threshold. Classifies each transaction into a whale tier, ranks
+      transactions by USD value within each day, and flags self-transfers.
+      Only includes successful eth_transfer transactions.
+    columns:
+      - name: hashkey
+        description: "Unique transaction identifier"
+        tests:
+          - unique
+          - not_null
+
+      - name: value_usd
+        description: "Transaction value in USD, used for tier classification and ranking"
+        tests:
+          - not_null
+
+      - name: whale_tier
+        description: "Classification of the transaction: whale, large_whale, or mega_whale"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['whale', 'large_whale', 'mega_whale']
+
+      - name: usd_rank
+        description: "Rank of this transaction by USD value within its day (1 = largest)"
+        tests:
+          - not_null
+
+      - name: is_self_transfer
+        description: "True if from_address equals to_address"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: value_eth_rounded
+        description: "Transaction value in ETH rounded to 6 decimal places"
+        tests:
+          - not_null
