@@ -167,3 +167,56 @@ models:
         description: "Transaction value in ETH rounded to 6 decimal places"
         tests:
           - not_null
+  - name: gas_price_trends
+    description: >
+      Daily gas fee summary aggregated from int_eth_gas. Grain is one row
+      per day per fee model (EIP-1559 vs legacy). Tracks average, median,
+      and max gas costs, total ETH spent on fees, gas utilization, and
+      EIP-1559 adoption over time.
+      tests:
+        - dbt_utils.unique_combination_of_columns:
+            combination_of_columns:
+              - tx_date
+              - is_eip1559 -s
+    columns:
+      - name: tx_date
+        description: "The date of the transactions being summarised"
+        tests:
+          - not_null
+
+      - name: is_eip1559
+        description: "True for EIP-1559 transactions, false for legacy fee model transactions"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: tx_count
+        description: "Number of transactions in this day and fee model group"
+        tests:
+          - not_null
+
+      - name: avg_gas_price_gwei
+        description: "Average gas price in Gwei (gas_price / 1e9)"
+        tests:
+          - not_null
+
+      - name: avg_gas_cost_usd
+        description: "Average gas fee paid per transaction in USD"
+        tests:
+          - not_null
+
+      - name: median_gas_cost_usd
+        description: "Median gas fee paid per transaction in USD"
+        tests:
+          - not_null
+
+      - name: total_gas_spent_eth
+        description: "Total ETH consumed in gas fees across all transactions that day"
+        tests:
+          - not_null
+
+      - name: eip1559_adoption_pct
+        description: "Percentage of transactions using the EIP-1559 fee model that day"
+        tests:
+          - not_null
