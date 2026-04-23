@@ -211,7 +211,7 @@ models:
       One row per block summarising all transaction activity within it.
       Tracks throughput, gas utilization, participant diversity, failure
       rates, and transaction type breakdown. Reads directly from
-      stg_eth_transactions to ensure complete unfiltered block coverage.
+      stg_eth to ensure complete unfiltered block coverage.
     columns:
       - name: block_number
         description: "Unique block identifier — the grain of this model"
@@ -255,3 +255,51 @@ models:
           - not_null
           - accepted_values:
               values: ['contract_heavy', 'transfer_heavy', 'mixed']
+  
+  - name: failed_tx_analysis
+    description: >
+      One row per failed transaction (receipt_status = 0). Captures the
+      gas cost paid for transactions that produced no result, classifies
+      failure reason as out_of_gas or reverted based on gas consumption
+      percentage, and flags contract interaction attempts.
+      Reads directly from stg_eth.
+    columns:
+      - name: hashkey
+        description: "Unique transaction identifier"
+        tests:
+          - unique
+          - not_null
+
+      - name: failure_date
+        description: "Date of the failed transaction, derived from tx_date in staging"
+        tests:
+          - not_null
+
+      - name: gas_cost_eth
+        description: "ETH paid in gas for this failed transaction"
+        tests:
+          - not_null
+
+      - name: gas_used_pct
+        description: "Percentage of gas limit consumed before failure (0-100)"
+        tests:
+          - not_null
+
+      - name: failure_reason
+        description: "out_of_gas if gas_used_pct >= 95, reverted otherwise"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['out_of_gas', 'reverted']
+
+      - name: is_contract_interaction
+        description: "True if the failed transaction was attempting a contract call"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: wasted_usd
+        description: "Alias for gas_cost_usd — USD burned on a transaction that produced nothing"
+        tests:
+          - not_null
