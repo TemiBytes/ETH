@@ -94,3 +94,56 @@ models:
         description: "Percentage of transactions using the EIP-1559 fee model that day"
         tests:
           - not_null
+
+  - name: active_wallets
+    description: >
+      One row per wallet address summarising all ETH transfer activity.
+      Combines sender and receiver perspectives via UNION ALL before
+      aggregating. Includes volume, frequency, lifespan, counterparty
+      breadth, and a behavioural wallet type classification.
+      Only includes successful eth_transfer transactions.
+    columns:
+      - name: wallet_address
+        description: "Unique Ethereum wallet address"
+        tests:
+          - unique
+          - not_null
+
+      - name: total_tx_count
+        description: "Total number of transactions this wallet appeared in (as sender or receiver)"
+        tests:
+          - not_null
+
+      - name: total_eth_sent
+        description: "Total ETH sent by this wallet across all transactions"
+        tests:
+          - not_null
+
+      - name: total_eth_received
+        description: "Total ETH received by this wallet across all transactions"
+        tests:
+          - not_null
+
+      - name: first_seen
+        description: "Timestamp of the earliest transaction this wallet appeared in"
+        tests:
+          - not_null
+
+      - name: last_seen
+        description: "Timestamp of the most recent transaction this wallet appeared in"
+        tests:
+          - not_null
+
+      - name: is_whale
+        description: "True if this wallet appears in the whale_alert mart"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: wallet_type
+        description: "Behavioural classification: whale, high_frequency, accumulator, distributor, or regular"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['whale', 'high_frequency', 'accumulator', 'distributor', 'regular']
