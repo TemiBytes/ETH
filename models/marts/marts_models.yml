@@ -147,3 +147,61 @@ models:
           - not_null
           - accepted_values:
               values: ['whale', 'high_frequency', 'accumulator', 'distributor', 'regular']
+  
+  - name: contract_leaderboard
+    description: >
+      One row per smart contract address summarising all interaction
+      activity. Ranks contracts by total interactions and total ETH
+      received, classifies into tiers, and tracks unique callers,
+      success rate, and call complexity. Excludes contract creation
+      transactions — only counts actual usage interactions.
+    columns:
+      - name: contract_address
+        description: "Unique smart contract address"
+        tests:
+          - unique
+          - not_null
+
+      - name: total_interactions
+        description: "Total number of transactions directed at this contract"
+        tests:
+          - not_null
+
+      - name: successful_interactions
+        description: "Number of interactions with receipt_status = 1"
+        tests:
+          - not_null
+
+      - name: success_rate_pct
+        description: "Percentage of interactions that succeeded (0-100)"
+        tests:
+          - not_null
+
+      - name: unique_callers
+        description: "Count of distinct wallet addresses that called this contract"
+        tests:
+          - not_null
+
+      - name: total_eth_received
+        description: "Total ETH sent to this contract across all interactions"
+        tests:
+          - not_null
+
+      - name: activity_rank
+        description: "Global rank by total_interactions descending (1 = most called)"
+        tests:
+          - unique
+          - not_null
+
+      - name: eth_rank
+        description: "Global rank by total_eth_received descending (1 = most ETH received)"
+        tests:
+          - unique
+          - not_null
+
+      - name: contract_tier
+        description: "Activity tier based on activity_rank: tier_1, tier_2, tier_3, or long_tail"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['tier_1', 'tier_2', 'tier_3', 'long_tail']
