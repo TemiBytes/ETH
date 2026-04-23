@@ -205,3 +205,53 @@ models:
           - not_null
           - accepted_values:
               values: ['tier_1', 'tier_2', 'tier_3', 'long_tail']
+  
+  - name: block_activity
+    description: >
+      One row per block summarising all transaction activity within it.
+      Tracks throughput, gas utilization, participant diversity, failure
+      rates, and transaction type breakdown. Reads directly from
+      stg_eth_transactions to ensure complete unfiltered block coverage.
+    columns:
+      - name: block_number
+        description: "Unique block identifier — the grain of this model"
+        tests:
+          - unique
+          - not_null
+
+      - name: tx_count
+        description: "Total transactions included in this block"
+        tests:
+          - not_null
+
+      - name: successful_tx_count
+        description: "Transactions with receipt_status = 1"
+        tests:
+          - not_null
+
+      - name: failed_tx_count
+        description: "Transactions with receipt_status = 0"
+        tests:
+          - not_null
+
+      - name: failure_rate_pct
+        description: "Percentage of transactions in this block that failed (0-100)"
+        tests:
+          - not_null
+
+      - name: total_eth_transferred
+        description: "Total ETH transferred across all transactions in the block"
+        tests:
+          - not_null
+
+      - name: block_gas_utilization_pct
+        description: "Percentage of block gas capacity consumed (total gas used / max gas limit)"
+        tests:
+          - not_null
+
+      - name: block_type
+        description: "Character of the block: contract_heavy, transfer_heavy, or mixed"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['contract_heavy', 'transfer_heavy', 'mixed']
