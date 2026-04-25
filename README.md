@@ -136,7 +136,6 @@ Full walkthrough of how this pipeline was designed and built:
 [From raw blockchain payloads to whale alerts: building an Ethereum 
 analytics pipeline with dbt and Snowflake](https://medium.com/@temi_akins/from-raw-blockchain-payloads-to-whale-alerts-building-an-ethereum-analytics-pipeline-with-dbt-and-7bcaf455f554)
 
-*(link to be added once published)*
 
 ---
 
