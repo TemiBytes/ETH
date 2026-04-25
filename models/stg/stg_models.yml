@@ -1,0 +1,7 @@
+models:
+  - name: stg_eth
+    columns:
+      - name: hashkey
+        tests:
+          - not_null
+          - unique

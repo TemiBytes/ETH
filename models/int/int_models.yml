@@ -1,0 +1,120 @@
+models:
+  - name: int_eth_gas
+    description: >
+      Enriched gas metrics derived from the staging table.
+      It computes actual gas cost in USD, gas utilization against the senders limit,
+      and flags EIP-1559 transactions.
+    columns:
+      - name: hashkey
+        description: "Unique transaction identifier, passed through from staging"
+        tests:
+          - unique
+          - not_null
+
+      - name: gas_cost_eth
+        description: "Actual gas fee paid in ETH (receipt_gas_used * receipt_effective_gas_price / 1e18)"
+        tests:
+          - not_null
+
+      - name: gas_cost_usd
+        description: "Gas fee converted to USD using the convert_to_usd macro"
+        tests:
+          - not_null
+
+      - name: gas_utilization_pct
+        description: "Percentage of gas limit actually consumed (0–100+)"
+        tests:
+          - not_null
+
+      - name: is_eip1559
+        description: "True if the transaction used the EIP-1559 fee model"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+  - name: int_eth_transfers
+    description: >
+      Enriched transfer metrics derived from stg_eth_transactions.
+      Converts value from Wei to ETH and USD, classifies each transaction
+      by transfer type, and adds readable boolean flags for status and value.
+    columns:
+      - name: hashkey
+        description: "Unique transaction identifier, passed through from staging"
+        tests:
+          - unique
+          - not_null
+
+      - name: value_eth
+        description: "Transaction value converted from Wei to ETH (value_wei / 1e18)"
+        tests:
+          - not_null
+
+      - name: value_usd
+        description: "Transaction value in USD using the convert_to_usd macro"
+        tests:
+          - not_null
+
+      - name: transfer_type
+        description: "Classification of the transaction: eth_transfer, contract_creation, or contract_interaction"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['eth_transfer', 'contract_creation', 'contract_interaction']
+
+      - name: is_successful
+        description: "True if receipt_status = 1, false if receipt_status = 0"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: has_value
+        description: "True if value_wei > 0, false for zero-value transactions"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+  - name: int_eth_contract_activity
+    description: >
+      Filters int_eth_transfers to only contract-related transactions
+      (contract_creation and contract_interaction). Adds a unified
+      contract_address column and input data length as a complexity proxy.
+    columns:
+      - name: hashkey
+        description: "Unique transaction identifier, passed through from staging"
+        tests:
+          - unique
+          - not_null
+
+      - name: contract_address
+        description: >
+          Unified contract address. Resolves to receipt_contract_address
+          for contract creations, to_address for contract interactions.
+        tests:
+          - not_null
+
+      - name: transfer_type
+        description: "Either contract_creation or contract_interaction — eth_transfer rows are excluded"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['contract_creation', 'contract_interaction']
+
+      - name: is_contract_creation
+        description: "True if this transaction deployed a new smart contract"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: is_successful
+        description: "True if receipt_status = 1, passed through from int_eth_transfers"
+        tests:
+          - not_null
+
+      - name: input_data_length
+        description: "Character length of the input field, used as a proxy for contract call complexity"
+        tests:
+          - not_null

@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: eth
+    database: ETH
+    schema: ETH
+    description: "Raw Ethereum transaction data loaded from AWS Public Blockchain S3 dataset. Each row is a VARIANT payload representing one transaction."
+    tables:
+      - name: eth_transactions_raw
+        description: "Landing table for raw Ethereum transactions from the public S3 stage, filtered to transactions with value > 1e19 wei (>10 ETH)."
+        columns:
+          - name: payload
+            description: "Full Parquet row stored as a Snowflake VARIANT. All fields are extracted and typed in the staging model."
+

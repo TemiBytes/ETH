@@ -1,0 +1,305 @@
+models:
+  - name: whale_alert
+    description: >
+      Identifies large ETH wallet-to-wallet transfers above the whale
+      threshold. Classifies each transaction into a whale tier, ranks
+      transactions by USD value within each day, and flags self-transfers.
+      Only includes successful eth_transfer transactions.
+    columns:
+      - name: hashkey
+        description: "Unique transaction identifier"
+        tests:
+          - unique
+          - not_null
+
+      - name: value_usd
+        description: "Transaction value in USD, used for tier classification and ranking"
+        tests:
+          - not_null
+
+      - name: whale_tier
+        description: "Classification of the transaction: whale, large_whale, or mega_whale"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['whale', 'large_whale', 'mega_whale']
+
+      - name: usd_rank
+        description: "Rank of this transaction by USD value within its day (1 = largest)"
+        tests:
+          - not_null
+
+      - name: is_self_transfer
+        description: "True if from_address equals to_address"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: value_eth_rounded
+        description: "Transaction value in ETH rounded to 6 decimal places"
+        tests:
+          - not_null
+
+  - name: gas_price_trends
+    description: >
+      Daily gas fee summary aggregated from int_eth_gas. Grain is one row
+      per day per fee model (EIP-1559 vs legacy). Tracks average, median,
+      and max gas costs, total ETH spent on fees, gas utilization, and
+      EIP-1559 adoption over time.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - tx_date
+            - is_eip1559
+    columns:
+      - name: tx_date
+        description: "The date of the transactions being summarised"
+        tests:
+          - not_null
+
+      - name: is_eip1559
+        description: "True for EIP-1559 transactions, false for legacy fee model transactions"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: tx_count
+        description: "Number of transactions in this day and fee model group"
+        tests:
+          - not_null
+
+      - name: avg_gas_price_gwei
+        description: "Average gas price in Gwei (gas_price / 1e9)"
+        tests:
+          - not_null
+
+      - name: avg_gas_cost_usd
+        description: "Average gas fee paid per transaction in USD"
+        tests:
+          - not_null
+
+      - name: median_gas_cost_usd
+        description: "Median gas fee paid per transaction in USD"
+        tests:
+          - not_null
+
+      - name: total_gas_spent_eth
+        description: "Total ETH consumed in gas fees across all transactions that day"
+        tests:
+          - not_null
+
+      - name: eip1559_adoption_pct
+        description: "Percentage of transactions using the EIP-1559 fee model that day"
+        tests:
+          - not_null
+
+  - name: active_wallets
+    description: >
+      One row per wallet address summarising all ETH transfer activity.
+      Combines sender and receiver perspectives via UNION ALL before
+      aggregating. Includes volume, frequency, lifespan, counterparty
+      breadth, and a behavioural wallet type classification.
+      Only includes successful eth_transfer transactions.
+    columns:
+      - name: wallet_address
+        description: "Unique Ethereum wallet address"
+        tests:
+          - unique
+          - not_null
+
+      - name: total_tx_count
+        description: "Total number of transactions this wallet appeared in (as sender or receiver)"
+        tests:
+          - not_null
+
+      - name: total_eth_sent
+        description: "Total ETH sent by this wallet across all transactions"
+        tests:
+          - not_null
+
+      - name: total_eth_received
+        description: "Total ETH received by this wallet across all transactions"
+        tests:
+          - not_null
+
+      - name: first_seen
+        description: "Timestamp of the earliest transaction this wallet appeared in"
+        tests:
+          - not_null
+
+      - name: last_seen
+        description: "Timestamp of the most recent transaction this wallet appeared in"
+        tests:
+          - not_null
+
+      - name: is_whale
+        description: "True if this wallet appears in the whale_alert mart"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: wallet_type
+        description: "Behavioural classification: whale, high_frequency, accumulator, distributor, or regular"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['whale', 'high_frequency', 'accumulator', 'distributor', 'regular']
+  
+  - name: contract_leaderboard
+    description: >
+      One row per smart contract address summarising all interaction
+      activity. Ranks contracts by total interactions and total ETH
+      received, classifies into tiers, and tracks unique callers,
+      success rate, and call complexity. Excludes contract creation
+      transactions — only counts actual usage interactions.
+    columns:
+      - name: contract_address
+        description: "Unique smart contract address"
+        tests:
+          - unique
+          - not_null
+
+      - name: total_interactions
+        description: "Total number of transactions directed at this contract"
+        tests:
+          - not_null
+
+      - name: successful_interactions
+        description: "Number of interactions with receipt_status = 1"
+        tests:
+          - not_null
+
+      - name: success_rate_pct
+        description: "Percentage of interactions that succeeded (0-100)"
+        tests:
+          - not_null
+
+      - name: unique_callers
+        description: "Count of distinct wallet addresses that called this contract"
+        tests:
+          - not_null
+
+      - name: total_eth_received
+        description: "Total ETH sent to this contract across all interactions"
+        tests:
+          - not_null
+
+      - name: activity_rank
+        description: "Global rank by total_interactions descending (1 = most called)"
+        tests:
+          - unique
+          - not_null
+
+      - name: eth_rank
+        description: "Global rank by total_eth_received descending (1 = most ETH received)"
+        tests:
+          - unique
+          - not_null
+
+      - name: contract_tier
+        description: "Activity tier based on activity_rank: tier_1, tier_2, tier_3, or long_tail"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['tier_1', 'tier_2', 'tier_3', 'long_tail']
+  
+  - name: block_activity
+    description: >
+      One row per block summarising all transaction activity within it.
+      Tracks throughput, gas utilization, participant diversity, failure
+      rates, and transaction type breakdown. Reads directly from
+      stg_eth to ensure complete unfiltered block coverage.
+    columns:
+      - name: block_number
+        description: "Unique block identifier — the grain of this model"
+        tests:
+          - unique
+          - not_null
+
+      - name: tx_count
+        description: "Total transactions included in this block"
+        tests:
+          - not_null
+
+      - name: successful_tx_count
+        description: "Transactions with receipt_status = 1"
+        tests:
+          - not_null
+
+      - name: failed_tx_count
+        description: "Transactions with receipt_status = 0"
+        tests:
+          - not_null
+
+      - name: failure_rate_pct
+        description: "Percentage of transactions in this block that failed (0-100)"
+        tests:
+          - not_null
+
+      - name: total_eth_transferred
+        description: "Total ETH transferred across all transactions in the block"
+        tests:
+          - not_null
+
+      - name: block_gas_utilization_pct
+        description: "Percentage of block gas capacity consumed (total gas used / max gas limit)"
+        tests:
+          - not_null
+
+      - name: block_type
+        description: "Character of the block: contract_heavy, transfer_heavy, or mixed"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['contract_heavy', 'transfer_heavy', 'mixed']
+  
+  - name: failed_tx_analysis
+    description: >
+      One row per failed transaction (receipt_status = 0). Captures the
+      gas cost paid for transactions that produced no result, classifies
+      failure reason as out_of_gas or reverted based on gas consumption
+      percentage, and flags contract interaction attempts.
+      Reads directly from stg_eth.
+    columns:
+      - name: hashkey
+        description: "Unique transaction identifier"
+        tests:
+          - unique
+          - not_null
+
+      - name: failure_date
+        description: "Date of the failed transaction, derived from tx_date in staging"
+        tests:
+          - not_null
+
+      - name: gas_cost_eth
+        description: "ETH paid in gas for this failed transaction"
+        tests:
+          - not_null
+
+      - name: gas_used_pct
+        description: "Percentage of gas limit consumed before failure (0-100)"
+        tests:
+          - not_null
+
+      - name: failure_reason
+        description: "out_of_gas if gas_used_pct >= 95, reverted otherwise"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['out_of_gas', 'reverted']
+
+      - name: is_contract_interaction
+        description: "True if the failed transaction was attempting a contract call"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: wasted_usd
+        description: "Alias for gas_cost_usd — USD burned on a transaction that produced nothing"
+        tests:
+          - not_null
