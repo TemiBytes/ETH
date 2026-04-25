@@ -24,18 +24,22 @@ a GitHub Actions CI/CD pipeline.
 ---
 
 ## Architecture
+```
 Source (S3)
 └── eth_transactions_raw        [Snowflake raw table — single VARIANT column]
-└── stg_eth             [Staging — flatten, cast, deduplicate, fix nulls]
-├── int_eth_gas              [Gas cost enrichment + EIP-1559 flags]
-├── int_eth_transfers        [Value movement + transfer type classification]
-└── int_eth_contract_activity [Contract interactions isolated]
-├── whale_alert
-├── gas_price_trends
-├── active_wallets
-├── contract_leaderboard
-├── block_activity      [reads directly from stg_eth]
-└── failed_tx_analysis  [reads directly from stg_eth]
+    └── stg_eth                 [Staging — flatten, cast, deduplicate, fix nulls]
+        ├── int_eth_gas                  [Gas cost enrichment + EIP-1559 flags]
+        ├── int_eth_transfers            [Value movement + transfer type classification]
+        └── int_eth_contract_activity   [Contract interactions isolated]
+            ├── whale_alert
+            ├── gas_price_trends
+            ├── active_wallets
+            └── contract_leaderboard
+
+        [Direct from staging]
+        ├── block_activity
+        └── failed_tx_analysis
+```
 
 ---
 
@@ -60,6 +64,7 @@ the S3 stage into the raw landing table.
 ---
 
 ## Project Structure
+```
 models/
 ├── staging/
 │   ├── _sources.yml
@@ -71,17 +76,20 @@ models/
 │   ├── int_eth_transfers.sql
 │   └── int_eth_contract_activity.sql
 └── marts/
-├── _marts__models.yml
-├── whale_alert.sql
-├── gas_price_trends.sql
-├── active_wallets.sql
-├── contract_leaderboard.sql
-├── block_activity.sql
-└── failed_tx_analysis.sql
+    ├── _marts__models.yml
+    ├── whale_alert.sql
+    ├── gas_price_trends.sql
+    ├── active_wallets.sql
+    ├── contract_leaderboard.sql
+    ├── block_activity.sql
+    └── failed_tx_analysis.sql
+
 macros/
 └── convert_to_usd.sql
+
 seeds/
 └── eth_usd_max.csv
+```
 
 ---
 
@@ -135,4 +143,4 @@ analytics pipeline with dbt and Snowflake](#)
 ## Author
 
 **Temidayo**
-[LinkedIn](#) · [Medium](https://medium.com/@temi_akins)
+[LinkedIn](https://www.linkedin.com/in/temi-akins/) · [Medium](https://medium.com/@temi_akins)
