@@ -69,7 +69,7 @@ models/
 ├── staging/
 │   ├── _sources.yml
 │   ├── _stg__models.yml
-│   └── stg_eth_transactions.sql
+│   └── stg_eth.sql
 ├── intermediate/
 │   ├── _int__models.yml
 │   ├── int_eth_gas.sql
@@ -124,7 +124,7 @@ dbt deps
 dbt debug
 
 # Run the full pipeline
-dbt build -s stg_eth_transactions+
+dbt build -s stg_eth+
 ```
 
 ---
