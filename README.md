@@ -1,165 +1,138 @@
-# ETH — Ethereum Analytics dbt Project
+# Ethereum Analytics Pipeline
 
-> A dbt (data build tool) project for transforming and modelling Ethereum blockchain data.
+A production-ready ELT pipeline built with dbt Core and Snowflake on 
+real Ethereum transaction data from the AWS Public Blockchain Dataset.
 
----
-
-## 📌 Overview
-
-This project uses **dbt** to build a clean, tested, and documented analytics layer on top of raw Ethereum on-chain data. It follows the standard dbt project structure and is designed to be modular and easy to extend as the project grows.
-
-**Data source:** Ethereum blockchain (on-chain data)  
-**Transformation tool:** dbt  
-**Target warehouse:** Snowflake 
+Raw Parquet files land in Snowflake as semi-structured VARIANT payloads. 
+dbt transforms them through a three-layer architecture into six 
+analytical mart tables — all tested, documented, and deployed via 
+a GitHub Actions CI/CD pipeline.
 
 ---
 
-## 🗂️ Project Structure
+## What This Pipeline Produces
 
-```
-ETH/
-├── analyses/       # Ad-hoc analytical queries (not materialized)
-├── macros/         # Reusable Jinja2 / SQL macros
-├── models/
-│   └── stg/    
-├── seeds/          # Static CSV data loaded into the warehouse
-├── snapshots/      # Type-2 SCD snapshots for slowly changing dimensions
-├── tests/          # Custom data tests
-├── dbt_project.yml # Project configuration
-└── README.md
-```
+| Mart | Description |
+|---|---|
+| `whale_alert` | Large ETH transfers classified by tier and ranked daily by USD value |
+| `gas_price_trends` | Daily gas fee analytics split by EIP-1559 vs legacy fee model |
+| `active_wallets` | Behavioural profiles for every wallet in the dataset |
+| `contract_leaderboard` | Smart contracts ranked by interaction count and ETH received |
+| `block_activity` | Network throughput and congestion metrics per block |
+| `failed_tx_analysis` | Failed transactions with failure reason and gas cost wasted |
 
 ---
 
-## ⚙️ Setup & Installation
+## Architecture
+Source (S3)
+└── eth_transactions_raw        [Snowflake raw table — single VARIANT column]
+└── stg_eth             [Staging — flatten, cast, deduplicate, fix nulls]
+├── int_eth_gas              [Gas cost enrichment + EIP-1559 flags]
+├── int_eth_transfers        [Value movement + transfer type classification]
+└── int_eth_contract_activity [Contract interactions isolated]
+├── whale_alert
+├── gas_price_trends
+├── active_wallets
+├── contract_leaderboard
+├── block_activity      [reads directly from stg_eth]
+└── failed_tx_analysis  [reads directly from stg_eth]
 
-### Prerequisites
+---
 
-- Python 3.12+
-- dbt Core
-- Access to your target data warehouse
+## Tech Stack
 
-### Install dbt
+- **dbt Core** — transformation framework
+- **Snowflake** — data warehouse
+- **AWS S3** — public blockchain data source
+- **GitHub Actions** — CI/CD pipeline
 
+---
+
+## Data Source
+
+The raw data comes from the [AWS Public Blockchain Dataset](https://registry.opendata.aws/aws-public-blockchain/), 
+a publicly available S3 bucket maintained by AWS. No credentials required.
+
+Transactions are loaded daily using a Snowflake scripted procedure that 
+pulls the previous day's high-value transactions (value > 10 ETH) from 
+the S3 stage into the raw landing table.
+
+---
+
+## Project Structure
+models/
+├── staging/
+│   ├── _sources.yml
+│   ├── _stg__models.yml
+│   └── stg_eth_transactions.sql
+├── intermediate/
+│   ├── _int__models.yml
+│   ├── int_eth_gas.sql
+│   ├── int_eth_transfers.sql
+│   └── int_eth_contract_activity.sql
+└── marts/
+├── _marts__models.yml
+├── whale_alert.sql
+├── gas_price_trends.sql
+├── active_wallets.sql
+├── contract_leaderboard.sql
+├── block_activity.sql
+└── failed_tx_analysis.sql
+macros/
+└── convert_to_usd.sql
+seeds/
+└── eth_usd_max.csv
+
+---
+
+## CI/CD Pipeline
+
+Every pull request triggers a GitHub Actions workflow that:
+
+1. Spins up a fresh Ubuntu environment
+2. Installs dbt Core and the Snowflake adapter
+3. Authenticates to Snowflake using RSA key pair authentication
+4. Runs `dbt build` against the dev schema — models and tests in DAG order
+5. Fails the PR if any model or test fails
+
+Branch-based target switching ensures dev branches always run against 
+the dev schema. Only code merged to master touches the production schema.
+
+---
+
+## Running This Project
+
+**Prerequisites**
+- dbt Core installed (`pip install dbt-core dbt-snowflake`)
+- A Snowflake account with the raw table set up (see `eth.sql` in the repo)
+- RSA key pair configured in your `profiles.yml`
+
+**Setup**
 ```bash
-pip install dbt-core dbt-snowflake 
-```
-
-### Clone the repo
-
-```bash
-git clone https://github.com/TemiBytes/ETH.git
-cd ETH
-```
-
-### Configure your profile
-
-dbt uses a `profiles.yml` file (stored in `~/.dbt/`) to connect to your warehouse. Create one for this project:
-
-```yaml
-eth:
-  target: dev
-  outputs:
-    dev:
-      type: <your_adapter>        # e.g. bigquery, snowflake, duckdb
-      # add your warehouse-specific connection details here
-```
-
-Refer to the [dbt profiles documentation](https://docs.getdbt.com/docs/core/connect-data-platform/profiles.yml) for adapter-specific settings.
-
----
-
-## 🚀 Running the Project
-
-```bash
-# Install dbt package dependencies (if any)
+# Install dependencies
 dbt deps
 
-# Run all models
-dbt run
+# Test your connection
+dbt debug
 
-# Run tests
-dbt test
-
-# Generate and serve documentation
-dbt docs generate
-dbt docs serve
-
-# Seed static data
-dbt seed
-
-# Run snapshots
-dbt snapshot
+# Run the full pipeline
+dbt build -s stg_eth_transactions+
 ```
 
 ---
 
-## 🧱 Models
+## Related Article
 
-> ⚠️ _This section will be expanded as models are built out._
+Full walkthrough of how this pipeline was designed and built:
 
-Models are organized by layer following dbt best practices:
+[From raw blockchain payloads to whale alerts: building an Ethereum 
+analytics pipeline with dbt and Snowflake](#)
 
-| Layer | Description |
-|-------|-------------|
-| `staging` | Raw source data cleaned and typed _(coming soon)_ |
-| `intermediate` | Business logic and joins _(coming soon)_ |
-| `marts` | Final analytics-ready tables / views _(coming soon)_ |
-
-All models in `models/example/` are currently materialized as **views** (default config).
+*(link to be added once published)*
 
 ---
 
-## 🧪 Testing
+## Author
 
-This project uses dbt's built-in testing framework. Tests are defined in `.yml` files alongside models.
-
-```bash
-dbt test
-```
-
-Custom tests live in the `tests/` directory.
-
----
-
-## 🌱 Seeds
-
-Static reference data (CSV files) are loaded via `dbt seed`. Seed files live in the `seeds/` directory.
-
----
-
-## 📸 Snapshots
-
-Slowly changing dimension (SCD Type 2) logic is captured in the `snapshots/` directory. Run with:
-
-```bash
-dbt snapshot
-```
-
----
-
-## 📚 Resources
-
-- [dbt Documentation](https://docs.getdbt.com/docs/introduction)
-- [dbt Discourse](https://discourse.getdbt.com/)
-- [dbt Community Slack](https://community.getdbt.com/)
-- [dbt Blog](https://blog.getdbt.com/)
-- [Ethereum JSON-RPC API Docs](https://ethereum.org/en/developers/docs/apis/json-rpc/)
-
----
-
-## 🛣️ Roadmap
-
-- [ ] Add staging models for raw Ethereum data
-- [ ] Add intermediate models for transaction and block analytics
-- [ ] Build marts for whale_alert, gas usage, and more
-- [ ] Add schema tests and source freshness checks
-- [ ] Set up CI/CD with GitHub Actions
-
----
-
-## 👤 Author
-
-**TemiBytes** — [GitHub](https://github.com/TemiBytes)
-
----
+**Temidayo**
+[LinkedIn](#) · [Medium](https://medium.com/@temi_akins)
