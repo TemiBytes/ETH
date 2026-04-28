@@ -44,3 +44,12 @@ models:
       +materialized: view
     int:
       +materialized: table
+    marts:
+      +materialized: table
+      +post-hook:
+        - "COMMENT ON TABLE {{ this }} IS 'This table was built by dbt'"
+      
+
+query-comment:
+  comment: "This was run by dbt"
+  append: true
