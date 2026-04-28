@@ -1,0 +1,28 @@
+{% macro log_dbt_run() %}
+
+{% set query %}
+    insert into ETH.AUDIT.DBT_AUDIT(
+        invocation_id,
+        run_started_at,
+        dbt_command,
+        target_profile,
+        target_name,
+        target_user,
+        dbt_version
+    )
+    values (
+        '{{ invocation_id }}',
+        '{{ run_started_at }}',
+        '{{ invocation_args_dict["invocation_command"] }}',
+        '{{ target.profile_name }}',
+        '{{ target.name }}',
+        '{{ target.user }}',
+        '{{ dbt_version }}'
+    );
+
+    commit;
+
+{% endset %}
+
+{{ run_query(query) }}
+{% endmacro %}
