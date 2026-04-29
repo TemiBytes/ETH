@@ -24,5 +24,5 @@
 
 {% endset %}
 
-{{ run_query(query) }}
+{% do run_query(query) %}
 {% endmacro %}
